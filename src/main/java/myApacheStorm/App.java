@@ -3,7 +3,6 @@ package myApacheStorm;
 import joinery.DataFrame;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -24,7 +23,44 @@ public class App
             dfMelbPOI = DataFrame.readCsv(POIpath,";");
             DataFrame<Object> dfTweets = new DataFrame<>();
             dfTweets = DataFrame.readCsv(dataPath,",");
+            System.out.println(dfTweets.size());
 //            dfTweets.head(5).show();
+            // In[0]
+
+//            poiID:java.lang.Long
+//            theme:java.lang.String
+//            subTheme:java.lang.String
+//            poiName:java.lang.String
+//            lat:java.lang.Double
+//            long:java.lang.Double
+
+
+//            poiID:java.lang.Long
+//            tweetID:java.lang.Double
+//            userID:java.lang.Long
+//            created_at:java.lang.String
+//            melbTime_created_at:java.lang.String
+//            createdWeekday:java.lang.Long
+//            createdHour:java.lang.Long
+//            createdDay:java.lang.Long
+//            createdMonth:java.lang.Long
+//            createdYear:java.lang.Long
+//            lat:java.lang.Double
+//            long:java.lang.Double
+//            text:java.lang.String
+//            poiDist:java.lang.Double
+//            poiLat:java.lang.Double
+//            poiLong:java.lang.Double
+//            poiTheme:java.lang.String
+//            poiName:java.lang.String
+//            poiFreq:java.lang.Long
+
+            for(int i =0;i<dfTweets.size();i++){
+                System.out.println(dfTweets.columns().toArray()[i]+ ":" +dfTweets.col(i).get(0).getClass().getName());
+
+            }
+
+
 
             // In[2]
             System.out.println("\nIn[2]:");
@@ -136,6 +172,10 @@ public class App
             System.out.println("minTime: "+lastTime);//1483448400
             System.out.println("maxTime: "+maxTime);//1485865800
 
+//            dfLambdas.show();
+
+
+
             for(int i =0;i<dfTweets2017.length();i++){
 //                poiID.getClass().getName()=java.lang.Long
                 if(Long.parseLong(dfTweets2017.col("unixtimeMin").get(i).toString())<lastTime){
@@ -149,7 +189,8 @@ public class App
                     }
                 }
             }
-//            dfLambdas.show();
+
+            dfLambdas.show();
 
 //            In[7]
             System.out.println("\nIn[7]:");
@@ -157,194 +198,194 @@ public class App
             DataFrame<Object> dfDetectedEvents = new DataFrame<Object>("algo", "poiID", "eventSignal","timeStarted","prevTime","timeEnded");
             Long start_time1= System.currentTimeMillis();
 //******************* Detection start from here
-//            String col_name = Arrays.asList("algo", "poiID", "timePeriod","eventSignal", "eventDetected").toString();
-//            appendToCSV(col_name,savePath,"tmp_results.csv");
-//            col_name = Arrays.asList("algo", "poiID", "eventSignal","timeStarted","prevTime","timeEnded").toString();
-//            appendToCSV(col_name,savePath,"dfDetectedEvents.csv");
+            String col_name = Arrays.asList("algo", "poiID", "timePeriod","eventSignal", "eventDetected").toString();
+            appendToCSV(col_name,savePath,"tmp_results.csv");
+            col_name = Arrays.asList("algo", "poiID", "eventSignal","timeStarted","prevTime","timeEnded").toString();
+            appendToCSV(col_name,savePath,"dfDetectedEvents.csv");
+
+
+
+
+            List all_poiIDs_obj = dfTweets2017.unique("poiID").col("poiID");
+            ArrayList<Integer> all_poiIDs = new ArrayList<Integer>();
+            for(int i = 0;i<all_poiIDs_obj.size();i++){
+                all_poiIDs.add(Integer.parseInt(all_poiIDs_obj.get(i).toString()));
+            }
+
+            List unixtimeMinList_obj = dfTweets2017.col("unixtimeMin");
+
+            Long num_intervals = ((maxTime-minTime)/timeBlock);
+
+            Integer numberOfRows = all_poiIDs.size();
+
+            Long iters = new Long(0);
+
+            // current timestamp in millis
+
+            ArrayList<Integer> rows = new ArrayList<Integer>();
+            for (int i = 0; i<numberOfRows;i++){
+                rows.add(i);
+            }
+            List<String> columns = Arrays.asList("algo", "poiID", "timePeriod","eventSignal", "eventDetected");
+
+
+
+            for(Long i=lastTime;i<maxTime;i+=timeBlock){
+                //Start loop1
+                Long start_time= System.currentTimeMillis();
+                iters++;
+
+                Integer row = -1;
+//                dfResults = pd.DataFrame(index = np.arange(0, numberOfRows) ,columns = ['algo', 'poiID', 'timePeriod','eventSignal', 'eventDetected'])
+                dfResults = new DataFrame<Object>(rows,columns);
+
+                for(Integer tempPOIID : all_poiIDs){
+                    //Start loop2
+                    double signalProbThreshold = 0.01;
+                    Long currWindow = i;
+                    Integer same_poiID_lam_index = new Integer(0);
+                    //same_poiID_lam = dfLambdas['poiID']==tempPOIID
+                    ArrayList<Boolean> same_poiID_lam = new ArrayList<Boolean>();
+                    for (int t =0;t<dfLambdas.col("poiID").size();t++){
+                        if (tempPOIID.equals(Integer.parseInt(dfLambdas.col("poiID").get(t).toString()))){
+                            same_poiID_lam_index = tempPOIID-1;
+                        }
+                    }
+
+                    DataFrame<Object> dfTweetsNow = new DataFrame<Object>();
+                    for(int t = 0;t<dfTweets2017.length();t++){
+                        if(Long.parseLong(dfTweets2017.col("unixtimeMin").get(t).toString())<currWindow+timeBlock
+                                &&Long.parseLong(dfTweets2017.col("unixtimeMin").get(t).toString())>=currWindow
+                                &&tempPOIID.equals(Integer.parseInt(dfTweets2017.col("poiID").get(t).toString()))){
+                            dfTweetsNow.append(dfTweets2017.row(t));
+                        }
+                    }
+                    // get all tweet send in currentWindows
+                    Integer tweetsNowCount = dfTweetsNow.length();
+
+                    Double lambda_totalTweets = Double.parseDouble(dfLambdas.get(same_poiID_lam_index,1).toString());
+                    Double lambda_firstTweetTime = Double.parseDouble(dfLambdas.get(same_poiID_lam_index,2).toString());
+                    Double tempLambda = currWindow-lambda_firstTweetTime;
+                    tempLambda = tempLambda/timeBlock;
+                    tempLambda = lambda_totalTweets/tempLambda;
+//                    if(iters==1){
+//                    System.out.println(lambda_totalTweets);
+//                    System.out.println(lambda_firstTweetTime);
+//                    System.out.println(tempLambda+"\n");}
+//                    else{
+//                        System.exit(0);
+//                    }
+                    /*
+                    currentWindow = 1483448400
+
+                        1    57.0
+                        Name: totalTweets, dtype: float64
+                        1    1.483189e+09
+                        Name: firstTweetTime, dtype: float64
+                        1    0.131944
+                        dtype: float64
+
+                        2    2.0
+                        Name: totalTweets, dtype: float64
+                        2    1.483229e+09
+                        Name: firstTweetTime, dtype: float64
+                        2    0.005464
+                        dtype: float64
+
+                        3    1.0
+                        Name: totalTweets, dtype: float64
+                        3    1.483189e+09
+                        Name: firstTweetTime, dtype: float64
+                        3    0.002315
+                        dtype: float64
+
+                        4    6.0
+                        Name: totalTweets, dtype: float64
+                        4    1.483205e+09
+                        Name: firstTweetTime, dtype: float64
+                        4    0.014778
+                        dtype: float64
+                        ... ...
+                    * */
+                    // tempLambda here is the mean value, now generate a poisson distribution by this mean value
+                    // and get cdf of tweetsNowCount in this poisson distribution
+                    boolean eventDetected = false;
+                    Double eventSignal;
+
+                    PoissonDistribution poisson = new PoissonDistribution(tempLambda);
+                    eventSignal = 1 - poisson.cumulativeProbability(tweetsNowCount);
+
+//                    if (iters == 1){
 //
-//
-//
-//
-//            List all_poiIDs_obj = dfTweets2017.unique("poiID").col("poiID");
-//            ArrayList<Integer> all_poiIDs = new ArrayList<Integer>();
-//            for(int i = 0;i<all_poiIDs_obj.size();i++){
-//                all_poiIDs.add(Integer.parseInt(all_poiIDs_obj.get(i).toString()));
-//            }
-//
-//            List unixtimeMinList_obj = dfTweets2017.col("unixtimeMin");
-//
-//            Long num_intervals = ((maxTime-minTime)/timeBlock);
-//
-//            Integer numberOfRows = all_poiIDs.size();
-//
-//            Long iters = new Long(0);
-//
-//            // current timestamp in millis
-//
-//            ArrayList<Integer> rows = new ArrayList<Integer>();
-//            for (int i = 0; i<numberOfRows;i++){
-//                rows.add(i);
-//            }
-//            List<String> columns = Arrays.asList("algo", "poiID", "timePeriod","eventSignal", "eventDetected");
-//
-//
-//
-//            for(Long i=lastTime;i<maxTime;i+=timeBlock){
-//                //Start loop1
-//                Long start_time= System.currentTimeMillis();
-//                iters++;
-//
-//                Integer row = -1;
-////                dfResults = pd.DataFrame(index = np.arange(0, numberOfRows) ,columns = ['algo', 'poiID', 'timePeriod','eventSignal', 'eventDetected'])
-//                dfResults = new DataFrame<Object>(rows,columns);
-//
-//                for(Integer tempPOIID : all_poiIDs){
-//                    //Start loop2
-//                    double signalProbThreshold = 0.01;
-//                    Long currWindow = i;
-//                    Integer same_poiID_lam_index = new Integer(0);
-//                    //same_poiID_lam = dfLambdas['poiID']==tempPOIID
-//                    ArrayList<Boolean> same_poiID_lam = new ArrayList<Boolean>();
-//                    for (int t =0;t<dfLambdas.col("poiID").size();t++){
-//                        if (tempPOIID.equals(Integer.parseInt(dfLambdas.col("poiID").get(t).toString()))){
-//                            same_poiID_lam_index = tempPOIID-1;
+//                        System.out.println(eventSignal);
+//                    }
+//                    else {
+//                        System.exit(0);
+//                    }
+                    /*
+                    eventSignal for iter == 1:
+                    0.1296752741666094
+                    0.005449577756994284
+                    0.0023121376970770546
+                    0.014669661623178731
+                    0.004866170422787031
+                    ... ...
+                    */
+                    Integer tempCount = Integer.parseInt(dfLambdas.col("totalTweets").get(same_poiID_lam_index).toString());
+                    tempCount+=tweetsNowCount;
+                    dfLambdas.set(same_poiID_lam_index,1,tempCount);
+
+                    //Start If-else
+                    //"prevTime","timeEnded"
+                    // 4 , 5
+                    if (eventSignal<signalProbThreshold && tweetsNowCount>=5){
+                        eventDetected = true;
+
+                        //print("Event detected at POI ", tempPOIID, " at time ", currWindow)
+                        //print(dfDetectedEvents.loc[len(dfDetectedEvents)-1])
+                        //57 and 105 detected events
+
+//                        if (dfDetectedEvents.length()==0){
+//                            //DataFrame is empty, add a new row
+//                            dfDetectedEvents.append(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock));
+//                            System.out.println("******************Event detected at POI " + tempPOIID + " at time " + currWindow);
+//                            System.out.println(dfDetectedEvents.length()-1);
 //                        }
-//                    }
-//
-//                    DataFrame<Object> dfTweetsNow = new DataFrame<Object>();
-//                    for(int t = 0;t<dfTweets2017.length();t++){
-//                        if(Long.parseLong(dfTweets2017.col("unixtimeMin").get(t).toString())<currWindow+timeBlock
-//                                &&Long.parseLong(dfTweets2017.col("unixtimeMin").get(t).toString())>=currWindow
-//                                &&tempPOIID.equals(Integer.parseInt(dfTweets2017.col("poiID").get(t).toString()))){
-//                            dfTweetsNow.append(dfTweets2017.row(t));
+//                        else{
+//                            for (int j = 0;j<dfDetectedEvents.length();j++){
+//                                if(cond_i(dfDetectedEvents,j,tempPOIID,currWindow,timeBlock)){
+//                                    // errors occur in cond_i
+//                                    //Event already existed, update new date
+//                                    dfDetectedEvents.set(j,4,currWindow);
+//                                    dfDetectedEvents.set(j,5,currWindow + timeBlock);
+//                                }
+//                                else {
+//                                    //Not yet, add a new row
+//                                    dfDetectedEvents.append(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock));
+//                                    System.out.println("Event detected at POI " + tempPOIID + " at time " + currWindow);
+//                                    System.out.println(dfDetectedEvents.length()-1);
+//                                }
+//                            }
 //                        }
-//                    }
-//                    // get all tweet send in currentWindows
-//                    Integer tweetsNowCount = dfTweetsNow.length();
-//
-//                    Double lambda_totalTweets = Double.parseDouble(dfLambdas.get(same_poiID_lam_index,1).toString());
-//                    Double lambda_firstTweetTime = Double.parseDouble(dfLambdas.get(same_poiID_lam_index,2).toString());
-//                    Double tempLambda = currWindow-lambda_firstTweetTime;
-//                    tempLambda = tempLambda/timeBlock;
-//                    tempLambda = lambda_totalTweets/tempLambda;
-////                    if(iters==1){
-////                    System.out.println(lambda_totalTweets);
-////                    System.out.println(lambda_firstTweetTime);
-////                    System.out.println(tempLambda+"\n");}
-////                    else{
-////                        System.exit(0);
-////                    }
-//                    /*
-//                    currentWindow = 1483448400
-//
-//                        1    57.0
-//                        Name: totalTweets, dtype: float64
-//                        1    1.483189e+09
-//                        Name: firstTweetTime, dtype: float64
-//                        1    0.131944
-//                        dtype: float64
-//
-//                        2    2.0
-//                        Name: totalTweets, dtype: float64
-//                        2    1.483229e+09
-//                        Name: firstTweetTime, dtype: float64
-//                        2    0.005464
-//                        dtype: float64
-//
-//                        3    1.0
-//                        Name: totalTweets, dtype: float64
-//                        3    1.483189e+09
-//                        Name: firstTweetTime, dtype: float64
-//                        3    0.002315
-//                        dtype: float64
-//
-//                        4    6.0
-//                        Name: totalTweets, dtype: float64
-//                        4    1.483205e+09
-//                        Name: firstTweetTime, dtype: float64
-//                        4    0.014778
-//                        dtype: float64
-//                        ... ...
-//                    * */
-//                    // tempLambda here is the mean value, now generate a poisson distribution by this mean value
-//                    // and get cdf of tweetsNowCount in this poisson distribution
-//                    boolean eventDetected = false;
-//                    Double eventSignal;
-//
-//                    PoissonDistribution poisson = new PoissonDistribution(tempLambda);
-//                    eventSignal = 1 - poisson.cumulativeProbability(tweetsNowCount);
-//
-////                    if (iters == 1){
-////
-////                        System.out.println(eventSignal);
-////                    }
-////                    else {
-////                        System.exit(0);
-////                    }
-//                    /*
-//                    eventSignal for iter == 1:
-//                    0.1296752741666094
-//                    0.005449577756994284
-//                    0.0023121376970770546
-//                    0.014669661623178731
-//                    0.004866170422787031
-//                    ... ...
-//                    */
-//                    Integer tempCount = Integer.parseInt(dfLambdas.col("totalTweets").get(same_poiID_lam_index).toString());
-//                    tempCount+=tweetsNowCount;
-//                    dfLambdas.set(same_poiID_lam_index,1,tempCount);
-//
-//                    //Start If-else
-//                    //"prevTime","timeEnded"
-//                    // 4 , 5
-//                    if (eventSignal<signalProbThreshold && tweetsNowCount>=5){
-//                        eventDetected = true;
-//
-//                        //print("Event detected at POI ", tempPOIID, " at time ", currWindow)
-//                        //print(dfDetectedEvents.loc[len(dfDetectedEvents)-1])
-//                        //57 and 105 detected events
-//
-////                        if (dfDetectedEvents.length()==0){
-////                            //DataFrame is empty, add a new row
-////                            dfDetectedEvents.append(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock));
-////                            System.out.println("******************Event detected at POI " + tempPOIID + " at time " + currWindow);
-////                            System.out.println(dfDetectedEvents.length()-1);
-////                        }
-////                        else{
-////                            for (int j = 0;j<dfDetectedEvents.length();j++){
-////                                if(cond_i(dfDetectedEvents,j,tempPOIID,currWindow,timeBlock)){
-////                                    // errors occur in cond_i
-////                                    //Event already existed, update new date
-////                                    dfDetectedEvents.set(j,4,currWindow);
-////                                    dfDetectedEvents.set(j,5,currWindow + timeBlock);
-////                                }
-////                                else {
-////                                    //Not yet, add a new row
-////                                    dfDetectedEvents.append(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock));
-////                                    System.out.println("Event detected at POI " + tempPOIID + " at time " + currWindow);
-////                                    System.out.println(dfDetectedEvents.length()-1);
-////                                }
-////                            }
-////                        }
-//                        dfDetectedEvents = DataFrame.readCsv(savePath+"dfDetectedEvents.csv",",");
-////                        Timestamp ts=new Timestamp(currWindow); get date from timestamp
-////                        Date date=new Date(ts.getTime());
-//                        appendToCSV(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock).toString(),
-//                                savePath,"dfDetectedEvents.csv");
-//                        // 每次append到一个temp csv file，最后再读取这个csv
-//                        //当前数据较少可以直接存到内存里，但是以后东西多了每次直接append操作到list，list存在内存里可能会爆
-//
-//                        System.out.println("******************Event detected at POI " + tempPOIID + " at time " + currWindow + "\n");
-//                    }
-//                    row++;
-//                    dfResults.append(Arrays.asList("tweetVol", tempPOIID, i, eventSignal,eventDetected));
-//                    appendToCSV(Arrays.asList("tweetVol", tempPOIID, i, eventSignal,eventDetected).toString(),savePath,"tmp_results.csv");
-//
-//                }
-//                System.out.println("Iter # " + iters
-//                        + ", With time starts at " + i + " , Completed in " + (System.currentTimeMillis()-start_time) + " ms");
-//
-//            }
+                        dfDetectedEvents = DataFrame.readCsv(savePath+"dfDetectedEvents.csv",",");
+//                        Timestamp ts=new Timestamp(currWindow); get date from timestamp
+//                        Date date=new Date(ts.getTime());
+                        appendToCSV(Arrays.asList("tweetVol", tempPOIID,eventSignal,currWindow,currWindow,currWindow+timeBlock).toString(),
+                                savePath,"dfDetectedEvents.csv");
+                        // 每次append到一个temp csv file，最后再读取这个csv
+                        //当前数据较少可以直接存到内存里，但是以后东西多了每次直接append操作到list，list存在内存里可能会爆
+
+                        System.out.println("******************Event detected at POI " + tempPOIID + " at time " + currWindow + "\n");
+                    }
+                    row++;
+                    dfResults.append(Arrays.asList("tweetVol", tempPOIID, i, eventSignal,eventDetected));
+                    appendToCSV(Arrays.asList("tweetVol", tempPOIID, i, eventSignal,eventDetected).toString(),savePath,"tmp_results.csv");
+
+                }
+                System.out.println("Iter # " + iters
+                        + ", With time starts at " + i + " , Completed in " + (System.currentTimeMillis()-start_time) + " ms");
+
+            }
 //          ************* end of detection
 
             System.out.println("All finished in " + (System.currentTimeMillis()-start_time1) + " ms");
@@ -379,7 +420,7 @@ public class App
 //            System.out.println("timeStarted:"+dfDetectedEvents.col(" timeStarted").get(0).getClass().getName());
 //            System.out.println("timeEnded:"+dfDetectedEvents.col(" timeEnded").get(0).getClass().getName());
 //            System.out.println("poiID:"+dfDetectedEvents.col(" poiID").get(0).getClass().getName());
-            dfDetectedEvents.sortBy(" poiID").show();
+//            dfDetectedEvents.sortBy(" poiID").show();
 
 
             System.out.println("dfEvents:         " + dfEvent.length() + ", " + dfEvent.size());
