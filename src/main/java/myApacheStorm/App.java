@@ -184,6 +184,8 @@ public class App
                 }
             }
 
+
+
 //            In[7]
             System.out.println("\nIn[7]:");
 //            boolean isDetectionSucceed = detectAndSaveEvents(dfTweets2017,dfLambdas,savePath,minTime,maxTime,lastTime,timeBlock);
@@ -203,19 +205,19 @@ public class App
 
             System.out.println(dfMelbPOI.columns());
             System.out.println(dfEvents.columns());
-//            saveEventsWithPOIinfo(dfEvents,dfMelbPOI,savePath);
+            saveEventsWithPOIinfo(dfEvents,dfMelbPOI,savePath);
 
             //In[9]
             System.out.println("\nIn[9]");
-//            boolean isSaveTweetsOfEventSucceed = saveTweetsOfEvent(dfTweets2017,dfEvents,savePath);
-//            if(isSaveTweetsOfEventSucceed){
-//                System.out.println("Succeed saving tweets of events");
-//            }
+            boolean isSaveTweetsOfEventSucceed = saveTweetsOfEvent(dfTweets2017,dfEvents,savePath);
+            if(isSaveTweetsOfEventSucceed){
+                System.out.println("Succeed saving tweets of events");
+            }
 
             //In[10]
             System.out.println("\nIn[10]");
-            DataFrame<Object> dfEventTweets = DataFrame.readCsv(savePath+"0915eventTweet.csv");
-            dfEventTweets.show();
+//            DataFrame<Object> dfEventTweets = DataFrame.readCsv(savePath+"0915eventTweet.csv");
+//            dfEventTweets.show();
 
 
         }
@@ -257,7 +259,7 @@ public class App
     }
 
     public static boolean saveTweetsOfEvent(DataFrame<Object> dfTweets2017,DataFrame<Object> dfEvents,String savePath){
-        DataFrame<Object> dfEventTweets = new DataFrame<Object>("eventID","poiID","tweetID","text");
+        DataFrame<Object> dfEventTweets = new DataFrame<Object>("eventID","poiID","userID","tweetID","text");
         for (int i =0;i<dfTweets2017.length();i++){
             Long dfTweets2017poiID = (Long)dfTweets2017.col("poiID").get(i);
             Long dfTweets2017unixtimeMin = (Long)dfTweets2017.col("unixtimeMin").get(i);
@@ -271,6 +273,7 @@ public class App
                             Arrays.asList(
                                     dfEvents.col("eventID").get(j),
                                     dfEventspoiID,
+                                    dfTweets2017.col("userID").get(i),
                                     dfTweets2017.col("tweetID").get(i),
                                     dfTweets2017.col("text").get(i)
                             )
@@ -280,6 +283,7 @@ public class App
         }
         try{
         dfEventTweets.sortBy("eventID").writeCsv(savePath+"0915eventTweet.csv");
+        dfEventTweets.sortBy("eventID").show();
         return  true;
         }
         catch (Exception e){
