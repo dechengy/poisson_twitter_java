@@ -12,9 +12,11 @@ public class App
 {
     public static void main( String[] args )
     {
+        //absolute path of POI information, tweet data and save path
         String POIpath = "/Users/de-cheng/Documents/master degree/master project/poisson_twitter_code_data/POI-Melb.csv";
         String dataPath = "/Users/de-cheng/Documents/master degree/master project/poisson_twitter_code_data/userVisits-Melb-tweets.csv";
         String savePath = "/Users/de-cheng/Documents/master degree/master project/poisson_twitter_java/";
+        //time block of detecting
         Integer timeBlock = 600;
         try{
             // In[1]
@@ -62,6 +64,7 @@ public class App
 
 
             // In[2]
+            //check if data is correct
             System.out.println("\nIn[2]:");
             System.out.println("Number of Tweets:"+dfTweets.unique("tweetID").length());
             System.out.println("Number of Users:"+dfTweets.unique("userID").length());
@@ -92,18 +95,20 @@ public class App
             System.out.println("\n");
 
 //            In[3]
+            //
             System.out.println("\nIn[3]:");
             DataFrame<Object> dfTweets2017 = new DataFrame<Object>(dfTweets.columns());
             System.out.println(dfTweets2017.columns());
             for(int i =0;i<dfTweets.length();i++){
                 if(dfTweets.col("createdYear").get(i).equals(new Long("2017")) && dfTweets.col("createdMonth").get(i).equals(new Long("1"))){
 //                    for consistency, only consider tweets in 2017 (where the full year tweets are available)
-//                    createdYear.getClass().getName()=java.lang.Long
-//                    createdMonth.getClass().getName()=java.lang.Long
+//          createdYear.getClass().getName()=java.lang.Long
+//          createdMonth.getClass().getName()=java.lang.Long
                     dfTweets2017.append(dfTweets.row(i));
                 }
             }
 //            In[4]
+//            check unix timestamp
             System.out.println("\nIn[4]:");
             dfTweets2017.add("unixtimeMin");
             System.out.println("Length of dfTweets2017: "+dfTweets2017.length());
@@ -130,6 +135,7 @@ public class App
                 }
             }
 //            In[5]
+//            check test data
             System.out.println("\nIn[5]:");
 //            lat/long.getClass().getName()=java.lang.Double
             List<Object> tweetLat = dfTweets.col("lat");
@@ -158,6 +164,7 @@ public class App
             System.out.println(dfTweets2017.col("text").get(1));
 
 //            In[6]
+//            process previous tweet data for 3 days
             System.out.println("\nIn[6]:");
             Integer pastWinSize = 3 * 24 * 60 * 60; //in seconds = 3 days
             //minTime and maxTime already definded in In[4]
@@ -187,13 +194,15 @@ public class App
 
 
 //            In[7]
+//            detecting events
             System.out.println("\nIn[7]:");
-//            boolean isDetectionSucceed = detectAndSaveEvents(dfTweets2017,dfLambdas,savePath,minTime,maxTime,lastTime,timeBlock);
-//            if(isDetectionSucceed){
-//                System.out.println("Succeed detecting events");
-//            }
+            boolean isDetectionSucceed = detectAndSaveEvents(dfTweets2017,dfLambdas,savePath,minTime,maxTime,lastTime,timeBlock);
+            if(isDetectionSucceed){
+                System.out.println("Succeed detecting events");
+            }
 
             //In[8]
+//            check results
             System.out.println("\nIn[8]");
             DataFrame<Object> dfDetectedEvents = DataFrame.readCsv(savePath+"0915dfDetectedEvents.csv");
             DataFrame<Object> dfEvents = dfDetectedEvents.add("eventID");
@@ -208,6 +217,7 @@ public class App
             saveEventsWithPOIinfo(dfEvents,dfMelbPOI,savePath);
 
             //In[9]
+//            extract tweets of events out
             System.out.println("\nIn[9]");
             boolean isSaveTweetsOfEventSucceed = saveTweetsOfEvent(dfTweets2017,dfEvents,savePath);
             if(isSaveTweetsOfEventSucceed){
@@ -219,6 +229,7 @@ public class App
 //            DataFrame<Object> dfEventTweets = DataFrame.readCsv(savePath+"0915eventTweet.csv");
 //            dfEventTweets.show();
 
+            //for the tweets of events, go class EventAnalytis.java
 
         }
         catch (Exception e){
@@ -368,13 +379,6 @@ public class App
                 Double tempLambda = currWindow-lambda_firstTweetTime;
                 tempLambda = tempLambda/timeBlock;
                 tempLambda = lambda_totalTweets/tempLambda;
-//                    if(iters==1){
-//                    System.out.println(lambda_totalTweets);
-//                    System.out.println(lambda_firstTweetTime);
-//                    System.out.println(tempLambda+"\n");}
-//                    else{
-//                        System.exit(0);
-//                    }
                 /*
                 currentWindow = 1483448400
 
@@ -415,13 +419,6 @@ public class App
                 PoissonDistribution poisson = new PoissonDistribution(tempLambda);
                 eventSignal = 1 - poisson.cumulativeProbability(tweetsNowCount);
 
-//                    if (iters == 1){
-//
-//                        System.out.println(eventSignal);
-//                    }
-//                    else {
-//                        System.exit(0);
-//                    }
                 /*
                 eventSignal for iter == 1:
                 0.1296752741666094
@@ -441,8 +438,6 @@ public class App
                 if (eventSignal<signalProbThreshold && tweetsNowCount>=5){
                     eventDetected = true;
                     boolean isNew = true;
-//                        cond = (dfDetectedEvents['algo']=="tweetVol") & (dfDetectedEvents['poiID']==tempPOIID)
-//                                  & (dfDetectedEvents['prevTime']==(currWindow-timeBlock))
                     for (int k=0;k<dfDetectedEvents.length();k++){
                         Long tempTime = currWindow-timeBlock;
                         if (dfDetectedEvents.col("algo").get(k).toString().replaceAll("\\[", "").replaceAll("\\]","").equals("tweetVol")
