@@ -14,12 +14,7 @@ public class EventAnalytis {
         String POIpath = "/Users/de-cheng/Documents/master degree/master project/poisson_twitter_code_data/POI-Melb.csv";
         runProcess(savePath);
         outcomeAnalysis(savePath);
-//        try{
-//        DataFrame<Object> a = DataFrame.readCsv(dataPath);
-//            a.show();}
-//        catch (Exception e){
-//            e.printStackTrace();
-//        }
+
 
     }
     public static void outcomeAnalysis(String savePath){
@@ -91,7 +86,6 @@ public class EventAnalytis {
                         dfProcessTweets.append(dfEventTweets.row(j));
                     }
                 }
-//                if(i==11){
 
                 //Step1 only: distinct the text and author
                 String result1 = step1Distinct(dfProcessTweets);
@@ -115,12 +109,11 @@ public class EventAnalytis {
                 //Full step:
                 String result = processEvent(dfProcessTweets);
                 dfDetectedEventsResults.set(i-1,fullStepCol,result);
-//                }
 
 
                 dfProcessTweets = new DataFrame<Object>("eventID","poiID","tweetID","userID","text","hashtags","processedtext");
             }
-            dfDetectedEventsResults.show();
+
             dfDetectedEventsResults.writeCsv(savePath+"analysis.csv");
         }
         catch (Exception e){
